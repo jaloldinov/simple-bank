@@ -13,7 +13,7 @@ type Store struct {
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
-		Queries: NewQueries(db),
+		Queries: New(db),
 		db:      db,
 	}
 }
@@ -24,7 +24,7 @@ func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 		return err
 	}
 
-	queries := NewQueries(tx)
+	queries := New(tx)
 	err = fn(queries)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
@@ -81,7 +81,23 @@ func (store *Store) TransferTx(ctx context.Context, params TransferTxParams) (Tr
 			return err
 		}
 
-		// TODO: updating account balance
+		// gets account --> updates its balance
+
+		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     params.FromAccountID,
+			Amount: -params.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     params.ToAccountID,
+			Amount: params.Amount,
+		})
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
