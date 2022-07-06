@@ -19,10 +19,6 @@ jobs:
         go-version: 1.18
       id: go
 
-
-    - name: Check out code into the GO module directory
-    - uses: actions/checkout@v3
-
     - name: Test
       run: make test
 
